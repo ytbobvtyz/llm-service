@@ -1,0 +1,31 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  rag-service:
+    build: .
+    container_name: rag-service
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_URL=http://host.docker.internal:11434
+      - MODEL_NAME=llama3.2:3b
+      - RATE_LIMIT=20/minute
+    volumes:
+      - ./data:/app/data  # Монтируем данные, чтобы не пересобирать
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # Для доступа к Ollama на хосте
+
+  # Опционально: если хотите, чтобы Ollama тоже был в Docker
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
