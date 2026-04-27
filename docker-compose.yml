@@ -1,4 +1,3 @@
-# docker-compose.yml
 version: '3.8'
 
 services:
@@ -8,16 +7,14 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - OLLAMA_URL=http://host.docker.internal:11434
+      - OLLAMA_URL=http://ollama:11434
       - MODEL_NAME=llama3.2:3b
-      - RATE_LIMIT=20/minute
     volumes:
-      - ./data:/app/data  # Монтируем данные, чтобы не пересобирать
+      - ./data:/app/data
+    depends_on:
+      - ollama
     restart: unless-stopped
-    extra_hosts:
-      - "host.docker.internal:host-gateway"  # Для доступа к Ollama на хосте
 
-  # Опционально: если хотите, чтобы Ollama тоже был в Docker
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
