@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG LLM Service</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+    <h1>📚 RAG LLM Service</h1>
+
+    <div class="status-bar">
+        <div class="status-item"><div class="status-dot"></div><span id="statusText">Подключение...</span></div>
+        <div class="status-item">🦙 Модель: <strong>llama3.2:3b</strong></div>
+        <div class="status-item">📄 RAG: <strong id="ragStatus">загрузка...</strong></div>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+            <div class="message assistant">
+                <div class="message-content">
+                    👋 Здравствуйте! Я AI-ассистент с доступом к вашим документам.<br><br>
+                    Задайте вопрос о логистике, перевозках или документах — я найду информацию и укажу источники.
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="messageInput" placeholder="Задайте вопрос..." autofocus>
+            <button id="sendBtn" onclick="sendMessage()">Отправить</button>
+        </div>
+    </div>
+
+    <div class="metrics" id="metrics">💡 Напишите вопрос, и я найду ответ в документах</div>
+    <div class="footer">🔒 Приватный сервис | Все данные на вашем сервере | RAG на основе FAISS</div>
+</div>
+<script src="/static/script.js"></script>
+</body>
+</html>

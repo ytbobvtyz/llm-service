@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
-# app/rag.py
 import os
 import sqlite3
 import numpy as np
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 class RAGRetriever:
     def __init__(self, db_path: str, index_path: str):
@@ -17,7 +15,6 @@ class RAGRetriever:
     def _load(self):
         print(f"📚 Загрузка RAG из {self.db_path}")
         
-        # Загружаем чанки из SQLite
         if not os.path.exists(self.db_path):
             print(f"⚠️ Файл {self.db_path} не найден")
             return
@@ -41,9 +38,9 @@ class RAGRetriever:
                 self.index = faiss.read_index(self.index_path)
                 print(f"✅ FAISS индекс загружен: {self.index.ntotal} векторов")
         except ImportError:
-            print("⚠️ FAISS не установлен, использую поиск по ключевым словам")
+            print("⚠️ FAISS не установлен")
         except Exception as e:
-            print(f"⚠️ Ошибка загрузки FAISS: {e}")
+            print(f"⚠️ Ошибка FAISS: {e}")
         
         # Пробуем загрузить модель эмбеддингов
         try:
@@ -52,15 +49,12 @@ class RAGRetriever:
             print(f"✅ Модель эмбеддингов загружена")
         except ImportError:
             print("⚠️ sentence-transformers не установлен")
-        except Exception as e:
-            print(f"⚠️ Ошибка загрузки модели: {e}")
     
     def search(self, query: str, top_k: int = 3) -> List[Dict]:
-        """Поиск релевантных чанков"""
         if not self.chunks:
             return []
         
-        # Если есть эмбеддинги и FAISS — используем
+        # Semantic search через FAISS
         if self.model and self.index:
             try:
                 import faiss
@@ -82,7 +76,7 @@ class RAGRetriever:
             except Exception as e:
                 print(f"⚠️ Ошибка FAISS: {e}")
         
-        # Fallback: поиск по ключевым словам
+        # Fallback: keyword search
         query_words = set(query.lower().split())
         scored = []
         for chunk in self.chunks:
