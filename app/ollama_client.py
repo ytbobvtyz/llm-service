@@ -8,7 +8,7 @@ class OllamaClient:
     def __init__(self):
         self.client = httpx.AsyncClient(timeout=120.0)
     
-    async def chat_with_commands(self, request: ChatRequest, project_rag=None) -> tuple[str, list, int]:
+    async def chat_with_commands(self, request: ChatRequest, project_rag=None, rag_instance=None) -> tuple[str, list, int]:
         """Обработка специальных команд и обычного чата"""
         last_message = request.messages[-1].content if request.messages else ""
         
@@ -16,8 +16,8 @@ class OllamaClient:
         if last_message.startswith('/'):
             return await self._handle_command(last_message, project_rag)
         
-        # Обычный чат с RAG
-        return await self._regular_chat(request, project_rag)
+        # Обычный чат с RAG — передаём оба источника
+        return await self._regular_chat(request, project_rag, rag_instance)
     
     async def _handle_command(self, command: str, project_rag=None) -> tuple[str, list, int]:
         """Обработка MCP команд"""
