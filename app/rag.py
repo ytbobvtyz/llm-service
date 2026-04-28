@@ -137,9 +137,14 @@ class ProjectDocsRAG:
     def search(self, query: str, top_k: int = 3) -> List[Dict]:
         """Поиск по документации"""
         if not self.chunks:
+            print(f"[DEBUG ProjectDocsRAG] No chunks loaded")
             return []
         
         query_words = set(query.lower().split())
+        print(f"[DEBUG ProjectDocsRAG] Searching for: '{query}'")
+        print(f"[DEBUG ProjectDocsRAG] Query words: {query_words}")
+        print(f"[DEBUG ProjectDocsRAG] Total chunks: {len(self.chunks)}")
+        
         scored = []
         
         for chunk in self.chunks:
@@ -148,6 +153,13 @@ class ProjectDocsRAG:
             if score > 0:
                 scored.append((score, chunk))
         
+        print(f"[DEBUG ProjectDocsRAG] Found matches: {len(scored)}")
+        scores = [f"{filename}: {score}" for score, filename in [(s, c['filename']) for s, c in scored]]
+        if scores:
+            print(f"[DEBUG ProjectDocsRAG] Scores: {scores}")
+        
         scored.sort(key=lambda x: x[0], reverse=True)
-        return [{'text': c['text'], 'filename': c['filename'], 'score': s} 
-                for s, c in scored[:top_k]]
+        results = [{'text': c['text'], 'filename': c['filename'], 'score': s} 
+                   for s, c in scored[:top_k]]
+        print(f"[DEBUG ProjectDocsRAG] Returning {len(results)} results")
+        return results
