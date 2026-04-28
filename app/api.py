@@ -37,7 +37,8 @@ async def chat(request: Request, chat_req: ChatRequest):
     # Используем chat_with_commands для обработки команд
     response, sources, latency = await ollama_client_instance.chat_with_commands(
         chat_req, 
-        project_rag_instance
+        project_rag_instance,
+        rag_instance
     )
     
     return ChatResponse(

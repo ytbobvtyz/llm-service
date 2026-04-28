@@ -87,20 +87,31 @@ class OllamaClient:
             response = f"❌ **Неизвестная команда:** `{command}`\n\nВведите `/help` для списка доступных команд."
             return response, [], int((time.time() - start) * 1000)
     
-    async def _regular_chat(self, request: ChatRequest, project_rag=None) -> tuple[str, list, int]:
-        """Обычный чат с поиском по документации проекта"""
+    async def _regular_chat(self, request: ChatRequest, project_rag=None, rag_instance=None) -> tuple[str, list, int]:
+        """Обычный чат с поиском по документации проекта и логистике"""
         last_message = request.messages[-1].content if request.messages else ""
         
-        # Поиск в документации проекта
         sources = []
         context = ""
         
+        # Поиск в документации проекта
         if project_rag and project_rag.chunks:
             chunks = project_rag.search(last_message, top_k=3)
             if chunks:
                 sources = list(set(c['filename'] for c in chunks))
                 context = "\n\n**📚 Из документации проекта:**\n" + "\n".join([
-                    f"[{c['filename']}]\n{c['text'][:500]}..." for c in chunks
+                    f"[{c['filename']}] {c['text'][:400]}..." for c in chunks
+                ])
+        
+        # Поиск в логистических документах
+        if rag_instance and rag_instance.chunks:
+            rag_chunks = rag_instance.search(last_message, top_k=3)
+            if rag_chunks:
+                for c in rag_chunks:
+                    if c['filename'] not in sources:
+                        sources.append(c['filename'])
+                context += "\n\n**📚 Из документов логистики:**\n" + "\n".join([
+                    f"[{c['filename']}] {c['text'][:300]}..." for c in rag_chunks[:2]
                 ])
         
         # Формируем промпт
@@ -110,22 +121,22 @@ class OllamaClient:
             history.append(f"{role}: {msg.content}")
         history_text = "\n".join(history[-5:]) if history else "Нет истории"
         
-        prompt = f"""Ты — ассистент разработчика. Отвечай на вопросы ТОЛЬКО на основе предоставленной документации проекта.
+        prompt = f"""Ты — ассистент разработчика с доступом к документации проекта и логистическим документам.
 
-{context}
+    {context}
 
-**История диалога:**
-{history_text}
+    **История диалога:**
+    {history_text}
 
-**Вопрос пользователя:** {last_message}
+    **Вопрос пользователя:** {last_message}
 
-**Инструкции:**
-1. Используй только информацию из документации проекта
-2. Если информации нет — честно скажи "В документации не найдено"
-3. Указывай источник (имя файла)
-4. Отвечай на русском языке, кратко и по делу
+    **Инструкции:**
+    1. Используй информацию из документации проекта, если она есть
+    2. Если вопрос о логистике — используй документы логистики
+    3. Если информации нет — скажи честно
+    4. Указывай источник (имя файла)
 
-**Ответ:**"""
+    **Ответ:**"""
         
         start_time = time.time()
         
@@ -148,12 +159,3 @@ class OllamaClient:
             return data.get("response", ""), sources, latency
         except Exception as e:
             raise Exception(f"Ollama error: {e}")
-    
-    def _format_history(self, messages) -> str:
-        if not messages:
-            return "Нет истории"
-        history = []
-        for msg in messages[-5:]:
-            role = "Пользователь" if msg.role == "user" else "Ассистент"
-            history.append(f"{role}: {msg.content}")
-        return "\n".join(history)
