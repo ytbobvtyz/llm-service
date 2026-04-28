@@ -136,3 +136,26 @@ h1 { color: #58a6ff; display: flex; align-items: center; gap: 10px; }
     font-size: 10px;
     margin-left: 8px;
 }
+.commands {
+    background: rgba(32, 109, 235, 0.1);
+    border: 1px solid rgba(32, 109, 235, 0.2);
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: #58a6ff;
+    text-align: center;
+}
+.commands code {
+    background: rgba(32, 109, 235, 0.15);
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin: 0 4px;
+    font-family: monospace;
+    border: 1px solid rgba(32, 109, 235, 0.3);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.commands code:hover {
+    background: rgba(32, 109, 235, 0.25);
+}

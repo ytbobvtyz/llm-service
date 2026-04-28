@@ -1,5 +1,5 @@
 let messages = [
-    {role: "assistant", content: "👋 Здравствуйте! Я AI-ассистент с доступом к вашим документам.\n\nЗадайте вопрос — я найду информацию в документах и укажу источники."}
+    {role: "assistant", content: "👋 Здравствуйте! Я AI-ассистент разработчика с доступом к проектной документации.\n\nЗадайте вопрос о проекте, структуре кода, или используйте команды:\n/help - список команд\n/branch - текущая ветка Git\n/files - файлы в проекте\n/structure - структура проекта\n/readme - документация проекта"}
 ];
 let isLoading = false;
 let currentResponseDiv = null;
@@ -170,3 +170,14 @@ document.getElementById('messageInput').addEventListener('keypress', (e) => {
 loadStatus();
 setInterval(loadStatus, 30000);
 displayMessages();
+
+// Добавляем обработчики кликов на команды
+document.addEventListener('DOMContentLoaded', function() {
+    const commandElements = document.querySelectorAll('.commands code');
+    commandElements.forEach(element => {
+        element.addEventListener('click', function() {
+            document.getElementById('messageInput').value = this.textContent;
+            document.getElementById('messageInput').focus();
+        });
+    });
+});

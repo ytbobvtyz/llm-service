@@ -20,8 +20,13 @@
         <div class="chat-messages" id="chatMessages">
             <div class="message assistant">
                 <div class="message-content">
-                    👋 Здравствуйте! Я AI-ассистент с доступом к вашим документам.<br><br>
-                    Задайте вопрос о логистике, перевозках или документах — я найду информацию и укажу источники.
+                    👋 Здравствуйте! Я AI-ассистент разработчика с доступом к проектной документации.<br><br>
+                    Задайте вопрос о проекте, структуре кода, или используйте команды:<br>
+                    <strong>/help</strong> - список команд<br>
+                    <strong>/branch</strong> - текущая ветка Git<br>
+                    <strong>/files</strong> - файлы в проекте<br>
+                    <strong>/structure</strong> - структура проекта<br>
+                    <strong>/readme</strong> - документация проекта
                 </div>
             </div>
         </div>
@@ -33,7 +38,12 @@
     </div>
 
     <div class="metrics" id="metrics">💡 Напишите вопрос, и я найду ответ в документах</div>
-    <div class="footer">🔒 Приватный сервис | Все данные на вашем сервере | RAG на основе FAISS</div>
+    <div class="commands">
+        💡 <strong>Команды:</strong> <code>/help</code> <code>/branch</code> <code>/files</code> <code>/structure</code> <code>/readme</code>
+    </div>
+    <div class="footer">
+        🔒 Приватный сервис | Ассистент разработчика | RAG + MCP Git | Все данные на вашем сервере
+    </div>
 </div>
 <script src="/static/script.js"></script>
 </body>

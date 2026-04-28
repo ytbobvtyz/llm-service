@@ -88,3 +88,66 @@ class RAGRetriever:
         scored.sort(key=lambda x: x[0], reverse=True)
         return [{'text': c['text'], 'filename': c['filename'], 'score': s} 
                 for s, c in scored[:top_k]]
+
+
+class ProjectDocsRAG:
+    """RAG для документации проекта"""
+    
+    def __init__(self, docs_path: str = "docs", db_path: str = "data/project_docs.db"):
+        self.docs_path = docs_path
+        self.db_path = db_path
+        self.chunks = []
+        self._load_docs()
+    
+    def _load_docs(self):
+        """Загружает документацию из папки docs/"""
+        if not os.path.exists(self.docs_path):
+            print(f"⚠️ Папка {self.docs_path} не найдена")
+            return
+        
+        for filename in os.listdir(self.docs_path):
+            if filename.endswith(('.md', '.txt')):
+                filepath = os.path.join(self.docs_path, filename)
+                try:
+                    with open(filepath, "r", encoding="utf-8") as f:
+                        content = f.read()
+                        # Разбиваем на чанки
+                        chunks = self._chunk_text(content, filename)
+                        self.chunks.extend(chunks)
+                except Exception as e:
+                    print(f"⚠️ Ошибка чтения {filename}: {e}")
+        
+        print(f"✅ Загружено {len(self.chunks)} чанков из docs/")
+    
+    def _chunk_text(self, text: str, filename: str, chunk_size: int = 1000) -> List[Dict]:
+        """Разбивает текст на чанки"""
+        chunks = []
+        words = text.split()
+        
+        for i in range(0, len(words), chunk_size):
+            chunk = " ".join(words[i:i+chunk_size])
+            chunks.append({
+                'text': chunk,
+                'filename': filename,
+                'type': 'project_docs'
+            })
+        
+        return chunks
+    
+    def search(self, query: str, top_k: int = 3) -> List[Dict]:
+        """Поиск по документации"""
+        if not self.chunks:
+            return []
+        
+        query_words = set(query.lower().split())
+        scored = []
+        
+        for chunk in self.chunks:
+            text = chunk.get('text', '').lower()
+            score = sum(1 for word in query_words if word in text)
+            if score > 0:
+                scored.append((score, chunk))
+        
+        scored.sort(key=lambda x: x[0], reverse=True)
+        return [{'text': c['text'], 'filename': c['filename'], 'score': s} 
+                for s, c in scored[:top_k]]

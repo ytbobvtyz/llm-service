@@ -7,3 +7,6 @@ data/*.db
 data/*.index
 *.log
 .DS_Store
+.kilo
+.task.md
+

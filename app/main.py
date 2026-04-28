@@ -8,7 +8,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
 
 from app.config import config
-from app.rag import RAGRetriever
+from app.rag import RAGRetriever, ProjectDocsRAG
 from app.ollama_client import OllamaClient
 from app.api import router, setup as setup_api, limiter
 
@@ -24,6 +24,9 @@ async def lifespan(app: FastAPI):
     
     app.state.rag = RAGRetriever(config.db_path, config.index_path)
     app.state.ollama_client = OllamaClient()
+    
+    # Загружаем документацию проекта
+    app.state.project_rag = ProjectDocsRAG()
     
     setup_api(app.state.rag, app.state.ollama_client)
     
