@@ -10,6 +10,7 @@ class Config:
     # RAG
     db_path: str = os.getenv("DB_PATH", "data/metadata.db")
     index_path: str = os.getenv("INDEX_PATH", "data/faiss_index")
+    project_docs_path: str = os.getenv("PROJECT_DOCS_PATH", "docs")
     
     # API
     rate_limit: str = os.getenv("RATE_LIMIT", "20/minute")

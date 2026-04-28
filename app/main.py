@@ -14,27 +14,41 @@ from app.api import router, setup as setup_api, limiter
 
 # Убедимся, что папка для статики существует
 os.makedirs("app/static", exist_ok=True)
+os.makedirs("docs", exist_ok=True)
+os.makedirs("data", exist_ok=True)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    print("=" * 60)
     print("🚀 Запуск RAG LLM Service")
     print(f"   Модель: {config.model_name}")
     print(f"   RAG индекс: {config.db_path}")
+    print("=" * 60)
     
+    # Инициализация RAG для логистики
     app.state.rag = RAGRetriever(config.db_path, config.index_path)
+    
+    # Инициализация RAG для документации проекта
+    app.state.project_rag = ProjectDocsRAG(
+        docs_path=config.project_docs_path,
+        db_path="data/project_docs.db"
+    )
+    
+    # Инициализация Ollama клиента
     app.state.ollama_client = OllamaClient()
     
-    # Загружаем документацию проекта
-    app.state.project_rag = ProjectDocsRAG()
-    
-    setup_api(app.state.rag, app.state.ollama_client)
+    # Настройка API
+    setup_api(app.state.rag, app.state.project_rag, app.state.ollama_client)
     
     yield
+    
     # Shutdown
     await app.state.ollama_client.client.aclose()
 
-app = FastAPI(title="RAG LLM Service", version="2.0.0", lifespan=lifespan)
+
+app = FastAPI(title="RAG LLM Service", version="3.0.0", lifespan=lifespan)
 
 # Rate limiting
 app.state.limiter = limiter
@@ -50,7 +64,8 @@ app.add_middleware(
 )
 
 # Static files
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+if os.path.exists("app/static"):
+    app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Корневой маршрут для веб-интерфейса
 @app.get("/", response_class=HTMLResponse)

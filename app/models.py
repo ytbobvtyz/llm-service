@@ -20,4 +20,5 @@ class ChatResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     rag_chunks: int
+    project_docs_chunks: int
     model: str

@@ -39,7 +39,7 @@ class GitMCP:
     def get_file_list(self, extension: Optional[str] = None) -> List[str]:
         """Получить список файлов в проекте"""
         files = []
-        exclude_dirs = {'.git', '__pycache__', 'venv', '.venv', 'data', 'static'}
+        exclude_dirs = {'.git', '__pycache__', 'venv', '.venv', 'data', 'static', 'ollama_data', '.kilo'}
         
         for root, dirs, filenames in os.walk(self.repo_path):
             # Исключаем ненужные директории
@@ -48,7 +48,7 @@ class GitMCP:
             for filename in filenames:
                 if extension and not filename.endswith(extension):
                     continue
-                if filename.endswith(('.py', '.md', '.yml', '.yaml', '.txt', '.html', '.css', '.js')):
+                if filename.endswith(('.py', '.md', '.yml', '.yaml', '.txt', '.html', '.css', '.js', '.json')):
                     rel_path = os.path.relpath(os.path.join(root, filename), self.repo_path)
                     files.append(rel_path)
         
@@ -57,18 +57,15 @@ class GitMCP:
     def get_project_structure(self, max_depth: int = 3) -> str:
         """Получить древовидную структуру проекта"""
         structure = []
+        exclude = {'.git', '__pycache__', 'venv', '.venv', 'data', 'static', 'ollama_data', '.kilo'}
         
         def walk_dir(path: str, prefix: str = "", depth: int = 0):
             if depth > max_depth:
                 return
             
-            items = sorted(os.listdir(path))
-            exclude = {'.git', '__pycache__', 'venv', '.venv', 'data', 'static', 'ollama_data'}
+            items = sorted([i for i in os.listdir(path) if i not in exclude])
             
             for i, item in enumerate(items):
-                if item in exclude:
-                    continue
-                
                 item_path = os.path.join(path, item)
                 is_last = i == len(items) - 1
                 
@@ -76,7 +73,7 @@ class GitMCP:
                     structure.append(f"{prefix}{'└── ' if is_last else '├── '}{item}/")
                     walk_dir(item_path, prefix + ("    " if is_last else "│   "), depth + 1)
                 else:
-                    if item.endswith(('.py', '.md', '.yml', '.yaml', '.html', '.css', '.js')):
+                    if item.endswith(('.py', '.md', '.yml', '.yaml', '.html', '.css', '.js', '.json')):
                         structure.append(f"{prefix}{'└── ' if is_last else '├── '}{item}")
         
         walk_dir(self.repo_path)
