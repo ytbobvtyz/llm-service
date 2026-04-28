@@ -1,4 +1,5 @@
 import time
+import os
 from fastapi import APIRouter, HTTPException, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -6,6 +7,14 @@ from slowapi.util import get_remote_address
 from app.config import config
 from app.models import ChatRequest, ChatResponse, HealthResponse
 
+API_KEY = os.getenv("API_KEY", "")
+
+def verify_api_key(request: Request):
+    if API_KEY:
+        key = request.headers.get("X-API-Key")
+        if key != API_KEY:
+            raise HTTPException(status_code=401, detail="Invalid API Key")
+        
 limiter = Limiter(key_func=get_remote_address)
 router = APIRouter()
 
@@ -81,3 +90,80 @@ async def get_readme():
     if content:
         return {"content": content}
     raise HTTPException(status_code=404, detail="README not found")
+
+@router.post("/api/review")
+@limiter.limit("10/minute")
+async def review_code(request: Request, review_req: dict):
+    """
+    Анализ кода для PR review
+    Ожидает: { "diff": "...", "files": ["file1.py", ...], "pr_title": "..." }
+    """
+    diff = review_req.get("diff", "")
+    files = review_req.get("files", [])
+    pr_title = review_req.get("pr_title", "")
+    
+    if not diff:
+        raise HTTPException(status_code=400, detail="Diff is required")
+    
+    prompt = f"""Ты — опытный ревьюер кода. Проанализируй следующие изменения и верни структурированный ответ.
+
+**PR заголовок:** {pr_title}
+**Изменённые файлы:** {', '.join(files[:20])}
+
+**DIFF изменений:**
+```diff
+{diff[:8000]}
+Что нужно оценить:
+
+Потенциальные баги и логические ошибки
+
+Архитектурные проблемы (нарушения SOLID, связанность)
+
+Проблемы с производительностью
+
+Стиль кода и читаемость
+
+Отсутствие тестов или документации
+
+Формат ответа (Markdown):
+
+🐛 Потенциальные баги
+[список]
+
+🏗️ Архитектурные проблемы
+[список]
+
+⚡ Рекомендации по улучшению
+[список]
+
+✅ Что хорошо
+[список]
+
+Если всё отлично, напиши: "✅ Код выглядит хорошо. Ничего критического не найдено."
+
+Ревью:"""
+
+    try:
+        response = await ollama_client_instance.client.post(
+        f"{config.ollama_url}/api/generate",
+        json={
+        "model": config.model_name,
+        "prompt": prompt,
+        "stream": False,
+        "options": {
+        "temperature": 0.2, # низкая температура для консистентности
+        "num_predict": 2048
+        }
+        }
+        )
+        data = response.json()
+        review_text = data.get("response", "")
+
+        return {
+        "review": review_text,
+        "files_reviewed": len(files),
+        "status": "success"
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

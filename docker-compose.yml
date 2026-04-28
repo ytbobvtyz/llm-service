@@ -29,3 +29,6 @@ services:
 
 volumes:
   ollama_data:
+
+environment:
+  - API_KEY=${API_KEY:-}

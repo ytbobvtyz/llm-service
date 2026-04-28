@@ -1,0 +1,76 @@
+```yaml
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+
+jobs:
+  ai-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Get PR diff
+        id: diff
+        run: |
+          # Получаем diff текущего PR
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          DIFF=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER" \
+            | jq -r '.diff_url')
+          
+          curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$DIFF" > pr.diff
+          echo "diff_created=true" >> $GITHUB_OUTPUT
+      
+      - name: Get changed files
+        id: files
+        run: |
+          git diff --name-only origin/${{ github.base_ref }}...${{ github.head_ref }} > changed_files.txt
+          echo "files=$(cat changed_files.txt | tr '\n' ',' | sed 's/,$//')" >> $GITHUB_OUTPUT
+      
+      - name: Send to AI Review Service
+        id: ai_review
+        env:
+          REVIEW_SERVICE_URL: ${{ secrets.REVIEW_SERVICE_URL }}
+          REVIEW_SERVICE_API_KEY: ${{ secrets.REVIEW_SERVICE_API_KEY }}
+        run: |
+          DIFF_CONTENT=$(cat pr.diff)
+          FILES_LIST=$(cat changed_files.txt | tr '\n' ',' | sed 's/,$//')
+          
+          # Отправляем запрос к вашему серверу
+          RESPONSE=$(curl -s -X POST "$REVIEW_SERVICE_URL/api/review" \
+            -H "Content-Type: application/json" \
+            -H "X-API-Key: $REVIEW_SERVICE_API_KEY" \
+            -d "{
+              \"diff\": $(echo "$DIFF_CONTENT" | jq -Rs .),
+              \"files\": [$(echo "$FILES_LIST" | jq -R 'split(",") | map(.) | .[]' | paste -sd, -)],
+              \"pr_title\": \"${{ github.event.pull_request.title }}\"
+            }")
+          
+          echo "review=$(echo "$RESPONSE" | jq -r '.review')" >> $GITHUB_OUTPUT
+      
+      - name: Post comment to PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const review = `${{ steps.ai_review.outputs.review }}`;
+            
+            if (review && review !== "null") {
+              const comment = `## 🤖 AI Code Review\n\n${review}\n\n---\n*Автоматическое ревью от AI ассистента*`;
+              
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
