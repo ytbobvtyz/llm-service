@@ -17,7 +17,6 @@ os.makedirs("app/static", exist_ok=True)
 os.makedirs("docs", exist_ok=True)
 os.makedirs("data", exist_ok=True)
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
