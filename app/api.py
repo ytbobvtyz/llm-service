@@ -32,10 +32,14 @@ def setup(rag, project_rag, ollama_client):
 
 @router.get("/health", response_model=HealthResponse)
 async def health():
+    # Импортируем support_rag для получения количества чанков
+    from app.support_rag import support_rag
+    
     return HealthResponse(
         status="ok",
         rag_chunks=len(rag_instance.chunks) if rag_instance else 0,
         project_docs_chunks=len(project_rag_instance.chunks) if project_rag_instance else 0,
+        support_chunks=len(support_rag.chunks) if support_rag else 0,
         model=config.model_name
     )
 
@@ -51,11 +55,17 @@ async def chat(request: Request, chat_req: ChatRequest):
         rag_instance
     )
     
+    # Определяем использовался ли контекст пользователя/тикета
+    user_context_used = chat_req.user_id is not None
+    ticket_context_used = chat_req.ticket_id is not None
+    
     return ChatResponse(
         response=response,
         sources=sources,
         latency_ms=latency,
-        rag_used=len(sources) > 0
+        rag_used=len(sources) > 0,
+        user_context_used=user_context_used,
+        ticket_context_used=ticket_context_used
     )
 
 @router.get("/api/git/branch")

@@ -8,5 +8,5 @@ data/*.index
 *.log
 .DS_Store
 .kilo
-.task.md
+.taskstate.md
 

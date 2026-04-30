@@ -11,19 +11,26 @@ from app.config import config
 from app.rag import RAGRetriever, ProjectDocsRAG
 from app.ollama_client import OllamaClient
 from app.api import router, setup as setup_api, limiter
+from app.support_api import router as support_router, setup as setup_support_api
+from app.support_rag import support_rag
+from app.crm import crm_manager
 
 # Убедимся, что папка для статики существует
 os.makedirs("app/static", exist_ok=True)
 os.makedirs("docs", exist_ok=True)
 os.makedirs("data", exist_ok=True)
+os.makedirs(config.faq_path, exist_ok=True)
+os.makedirs(config.product_docs_path, exist_ok=True)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
     print("=" * 60)
-    print("🚀 Запуск RAG LLM Service")
+    print("🚀 Запуск RAG LLM Service с поддержкой пользователей")
     print(f"   Модель: {config.model_name}")
     print(f"   RAG индекс: {config.db_path}")
+    print(f"   Support RAG: {config.support_rag_db_path}")
+    print(f"   CRM провайдер: {config.crm_provider}")
     print("=" * 60)
     
     # Инициализация RAG для логистики
@@ -38,8 +45,12 @@ async def lifespan(app: FastAPI):
     # Инициализация Ollama клиента
     app.state.ollama_client = OllamaClient()
     
+    # Support RAG уже инициализирован как глобальная переменная
+    # CRM Manager уже инициализирован как глобальная переменная
+    
     # Настройка API
     setup_api(app.state.rag, app.state.project_rag, app.state.ollama_client)
+    setup_support_api(app.state.ollama_client)
     
     yield
     
@@ -47,7 +58,7 @@ async def lifespan(app: FastAPI):
     await app.state.ollama_client.client.aclose()
 
 
-app = FastAPI(title="RAG LLM Service", version="3.0.0", lifespan=lifespan)
+app = FastAPI(title="RAG LLM Service с поддержкой пользователей", version="4.0.0", lifespan=lifespan)
 
 # Rate limiting
 app.state.limiter = limiter
@@ -75,8 +86,9 @@ async def root():
             return HTMLResponse(content=f.read())
     return HTMLResponse(content="<h1>Index.html not found</h1>", status_code=404)
 
-# Include API router
+# Include API routers
 app.include_router(router)
+app.include_router(support_router)
 
 if __name__ == "__main__":
     import uvicorn

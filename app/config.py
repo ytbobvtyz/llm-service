@@ -12,6 +12,13 @@ class Config:
     index_path: str = os.getenv("INDEX_PATH", "data/faiss_index")
     project_docs_path: str = os.getenv("PROJECT_DOCS_PATH", "docs")
     
+    # Support
+    support_db_path: str = os.getenv("SUPPORT_DB_PATH", "data/support.db")
+    support_rag_db_path: str = os.getenv("SUPPORT_RAG_DB_PATH", "data/support_rag.db")
+    faq_path: str = os.getenv("FAQ_PATH", "data/faq")
+    product_docs_path: str = os.getenv("PRODUCT_DOCS_PATH", "docs/product")
+    crm_provider: str = os.getenv("CRM_PROVIDER", "sqlite")
+    
     # API
     rate_limit: str = os.getenv("RATE_LIMIT", "20/minute")
     max_tokens: int = int(os.getenv("MAX_TOKENS", "768"))
