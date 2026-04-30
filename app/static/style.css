@@ -136,6 +136,15 @@ h1 { color: #58a6ff; display: flex; align-items: center; gap: 10px; }
     font-size: 10px;
     margin-left: 8px;
 }
+.support-badge {
+    display: inline-block;
+    background: #1b4e2d;
+    color: #3fb950;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    margin-left: 8px;
+}
 .commands {
     background: rgba(32, 109, 235, 0.1);
     border: 1px solid rgba(32, 109, 235, 0.2);
@@ -158,4 +167,29 @@ h1 { color: #58a6ff; display: flex; align-items: center; gap: 10px; }
 }
 .commands code:hover {
     background: rgba(32, 109, 235, 0.25);
+}
+.quick-questions {
+    background: rgba(63, 185, 80, 0.1);
+    border: 1px solid rgba(63, 185, 80, 0.2);
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: #3fb950;
+    text-align: center;
+}
+.quick-btn {
+    background: rgba(63, 185, 80, 0.15);
+    color: #3fb950;
+    border: 1px solid rgba(63, 185, 80, 0.3);
+    border-radius: 6px;
+    padding: 6px 12px;
+    margin: 0 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-family: inherit;
+}
+.quick-btn:hover {
+    background: rgba(63, 185, 80, 0.25);
 }
