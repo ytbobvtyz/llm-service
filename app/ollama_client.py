@@ -21,17 +21,36 @@ class OllamaClient:
         return await self._regular_chat(request, project_rag, rag_instance)
     
     async def _handle_command(self, command: str, project_rag=None) -> tuple[str, list, int]:
-        """Обработка MCP команд"""
+        """Обработка MCP команд и команд поддержки"""
         from app.mcp_tools import git_mcp
         
         start = time.time()
         
         # Очищаем команду от лишних пробелов
-        command = command.strip().lower()
+        command = command.strip()
+        command_lower = command.lower()
         
-        if command == '/help':
+        # Команды поддержки
+        if command_lower.startswith('/support'):
+            return await self._handle_support_command(command, start)
+        
+        elif command_lower == '/faq':
+            return await self._handle_faq_command(start)
+        
+        elif command_lower == '/users':
+            return await self._handle_users_command(start)
+        
+        elif command_lower == '/tickets':
+            return await self._handle_tickets_command(start)
+        
+        elif command_lower == '/stats':
+            return await self._handle_stats_command(start)
+        
+        # Старые команды разработчика
+        elif command_lower == '/help':
             response = """**🔧 Доступные команды:**
 
+**Команды разработчика:**
 | Команда | Описание |
 |---------|----------|
 | `/help` | Показать эту справку |
@@ -41,6 +60,22 @@ class OllamaClient:
 | `/diff` | Показать незакоммиченные изменения |
 | `/readme` | Показать содержимое README |
 
+**👥 Команды поддержки пользователей:**
+| Команда | Описание |
+|---------|----------|
+| `/support [вопрос]` | Чат с поддержкой пользователей |
+| `/faq` | Просмотр FAQ (часто задаваемых вопросов) |
+| `/users` | Управление пользователями |
+| `/tickets` | Управление тикетами поддержки |
+| `/stats` | Статистика поддержки |
+
+**💬 Примеры вопросов для поддержки:**
+- "Почему не работает авторизация?"
+- "Как обновить тарифный план?"
+- "Какие системные требования?"
+- "Как восстановить доступ к аккаунту?"
+- "Как очистить кэш приложения?"
+
 **Примеры вопросов о проекте:**
 - "Какая структура проекта?"
 - "Где лежит main.py?"
@@ -48,12 +83,12 @@ class OllamaClient:
 - "Как работает RAG система?" """
             return response, [], int((time.time() - start) * 1000)
         
-        elif command == '/branch':
+        elif command_lower == '/branch':
             branch_info = git_mcp.get_current_branch()
             response = f"🌿 **Текущая git-ветка:** `{branch_info['branch']}`"
             return response, [], int((time.time() - start) * 1000)
         
-        elif command == '/files':
+        elif command_lower == '/files':
             files = git_mcp.get_file_list()
             if files:
                 file_list = "\n".join([f"• `{f}`" for f in files[:30]])
@@ -64,17 +99,17 @@ class OllamaClient:
                 response = "❌ Не удалось получить список файлов"
             return response, [], int((time.time() - start) * 1000)
         
-        elif command == '/structure':
+        elif command_lower == '/structure':
             structure = git_mcp.get_project_structure()
             response = f"**📂 Структура проекта:**\n```\n{structure}\n```"
             return response, [], int((time.time() - start) * 1000)
         
-        elif command == '/diff':
+        elif command_lower == '/diff':
             diff = git_mcp.get_diff()
             response = f"**📝 Изменения в репозитории:**\n```\n{diff}\n```"
             return response, [], int((time.time() - start) * 1000)
         
-        elif command == '/readme':
+        elif command_lower == '/readme':
             readme = git_mcp.get_readme_content()
             if readme:
                 if len(readme) > 2000:
@@ -87,6 +122,150 @@ class OllamaClient:
         else:
             response = f"❌ **Неизвестная команда:** `{command}`\n\nВведите `/help` для списка доступных команд."
             return response, [], int((time.time() - start) * 1000)
+    
+    async def _handle_support_command(self, command: str, start_time: float) -> tuple[str, list, int]:
+        """Обработка команды /support"""
+        try:
+            # Извлекаем вопрос из команды
+            parts = command.split(' ', 1)
+            if len(parts) < 2 or not parts[1].strip():
+                return "🤖 **Использование:** `/support [ваш вопрос]`\n\nПример: `/support Почему не работает авторизация?`", [], int((time.time() - start_time) * 1000)
+            
+            question = parts[1].strip()
+            
+            # Имитируем ответ поддержки
+            support_responses = {
+                "авторизация": "**Проблемы с авторизацией:**\n\n1. Проверьте правильность ввода email и пароля\n2. Очистите кэш браузера и cookies\n3. Попробуйте использовать режим инкогнито\n4. Если проблема сохраняется, сбросьте пароль через 'Забыли пароль?'\n\n📞 Для срочной помощи: support@example.com",
+                "тарифный план": "**Обновление тарифного плана:**\n\n1. Войдите в личный кабинет\n2. Перейдите в раздел 'Тарифы и оплата'\n3. Выберите нужный план и нажмите 'Обновить'\n4. Следуйте инструкциям по оплате\n\n💡 Бизнес-план включает приоритетную поддержку и расширенные функции.",
+                "системные требования": "**Системные требования:**\n\n• **Браузер:** Chrome 90+, Firefox 88+, Safari 14+\n• **ОС:** Windows 10+, macOS 10.15+, Ubuntu 20.04+\n• **Память:** 4 ГБ RAM минимум\n• **Интернет:** 10 Мбит/с стабильное соединение\n\n📱 Мобильное приложение доступно для iOS 14+ и Android 10+.",
+                "восстановить доступ": "**Восстановление доступа к аккаунту:**\n\n1. На странице входа нажмите 'Забыли пароль?'\n2. Введите email, связанный с аккаунтом\n3. Проверьте почту и перейдите по ссылке\n4. Установите новый пароль\n\n🔒 Если email недоступен, обратитесь в поддержку с документами.",
+                "очистить кэш": "**Очистка кэша приложения:**\n\n**Веб-версия:**\n1. Нажмите Ctrl+Shift+Delete (Windows/Linux) или Cmd+Shift+Delete (Mac)\n2. Выберите 'Кэш' и 'Cookies'\n3. Нажмите 'Очистить данные'\n\n**Мобильное приложение:**\n1. Настройки → Приложения → Наше приложение\n2. Хранилище → Очистить кэш\n3. Перезапустите приложение"
+            }
+            
+            # Ищем подходящий ответ
+            question_lower = question.lower()
+            response = "🤖 **Ассистент поддержки:**\n\n"
+            
+            for keyword, answer in support_responses.items():
+                if keyword in question_lower:
+                    response += answer
+                    break
+            else:
+                response += f"**Вопрос:** {question}\n\n**Ответ:** Благодарим за обращение! Наша команда поддержки рассмотрит ваш вопрос в ближайшее время.\n\n📧 Для срочных вопросов: support@example.com\n📞 Телефон: +7 (800) 123-45-67\n\n⏰ Часы работы: Пн-Пт 9:00-18:00"
+            
+            latency = int((time.time() - start_time) * 1000)
+            response += f"\n\n⚡ Время обработки: {latency}ms"
+            
+            return response, [], latency
+            
+        except Exception as e:
+            error_msg = f"❌ **Ошибка при обработке команды поддержки:** {str(e)}"
+            return error_msg, [], int((time.time() - start_time) * 1000)
+    
+    async def _handle_faq_command(self, start_time: float) -> tuple[str, list, int]:
+        """Обработка команды /faq"""
+        try:
+            # Имитируем FAQ
+            faq_items = [
+                {"question": "Как восстановить пароль?", "answer": "Используйте функцию 'Забыли пароль?' на странице входа."},
+                {"question": "Как обновить тарифный план?", "answer": "В личном кабинете в разделе 'Тарифы и оплата'."},
+                {"question": "Какие системные требования?", "answer": "Современный браузер и стабильное интернет-соединение."},
+                {"question": "Как связаться с поддержкой?", "answer": "Email: support@example.com, телефон: +7 (800) 123-45-67."},
+                {"question": "Есть ли мобильное приложение?", "answer": "Да, для iOS и Android в соответствующих магазинах."}
+            ]
+            
+            response = "📋 **Часто задаваемые вопросы (FAQ):**\n\n"
+            for i, item in enumerate(faq_items, 1):
+                response += f"{i}. **{item['question']}**\n   {item['answer']}\n\n"
+            
+            response += f"Всего вопросов: {len(faq_items)}"
+            
+            return response, [], int((time.time() - start_time) * 1000)
+            
+        except Exception as e:
+            error_msg = f"❌ **Ошибка при получении FAQ:** {str(e)}"
+            return error_msg, [], int((time.time() - start_time) * 1000)
+    
+    async def _handle_users_command(self, start_time: float) -> tuple[str, list, int]:
+        """Обработка команды /users"""
+        try:
+            # Имитируем список пользователей
+            users = [
+                {"id": 1, "name": "Иван Петров", "email": "ivan@example.com", "plan": "Бизнес"},
+                {"id": 2, "name": "Мария Сидорова", "email": "maria@example.com", "plan": "Про"},
+                {"id": 3, "name": "Алексей Иванов", "email": "alex@example.com", "plan": "Базовый"},
+                {"id": 4, "name": "Елена Кузнецова", "email": "elena@example.com", "plan": "Бизнес"},
+                {"id": 5, "name": "Дмитрий Смирнов", "email": "dmitry@example.com", "plan": "Про"}
+            ]
+            
+            response = "👥 **Пользователи системы:**\n\n"
+            for user in users:
+                response += f"• **{user['name']}** ({user['email']}) - {user['plan']}\n"
+            
+            response += f"\nВсего пользователей: {len(users)}"
+            
+            return response, [], int((time.time() - start_time) * 1000)
+            
+        except Exception as e:
+            error_msg = f"❌ **Ошибка при получении списка пользователей:** {str(e)}"
+            return error_msg, [], int((time.time() - start_time) * 1000)
+    
+    async def _handle_tickets_command(self, start_time: float) -> tuple[str, list, int]:
+        """Обработка команды /tickets"""
+        try:
+            # Имитируем список тикетов
+            tickets = [
+                {"id": 101, "title": "Проблема с авторизацией", "status": "В работе", "priority": "Высокий"},
+                {"id": 102, "title": "Вопрос по тарифному плану", "status": "Открыт", "priority": "Средний"},
+                {"id": 103, "title": "Ошибка в отчетах", "status": "Решен", "priority": "Высокий"},
+                {"id": 104, "title": "Запрос на интеграцию", "status": "В ожидании", "priority": "Низкий"},
+                {"id": 105, "title": "Восстановление доступа", "status": "В работе", "priority": "Критический"}
+            ]
+            
+            response = "🎫 **Тикеты поддержки:**\n\n"
+            for ticket in tickets:
+                status_emoji = "🟢" if ticket['status'] == 'Решен' else "🟡" if ticket['status'] == 'В работе' else "🔴"
+                priority_emoji = "🔴" if ticket['priority'] == 'Критический' else "🟠" if ticket['priority'] == 'Высокий' else "🟡"
+                response += f"• #{ticket['id']}: {ticket['title']} {status_emoji}{priority_emoji}\n"
+            
+            response += f"\nВсего тикетов: {len(tickets)}"
+            
+            return response, [], int((time.time() - start_time) * 1000)
+            
+        except Exception as e:
+            error_msg = f"❌ **Ошибка при получении списка тикетов:** {str(e)}"
+            return error_msg, [], int((time.time() - start_time) * 1000)
+    
+    async def _handle_stats_command(self, start_time: float) -> tuple[str, list, int]:
+        """Обработка команды /stats"""
+        try:
+            # Имитируем статистику
+            stats = {
+                "total_users": 42,
+                "active_tickets": 7,
+                "resolved_today": 3,
+                "avg_response_time": "2 часа 15 минут",
+                "faq_items": 15,
+                "satisfaction_rate": "94%"
+            }
+            
+            response = "📊 **Статистика поддержки:**\n\n"
+            response += f"• 👥 Всего пользователей: **{stats['total_users']}**\n"
+            response += f"• 🎫 Активных тикетов: **{stats['active_tickets']}**\n"
+            response += f"• ✅ Решено сегодня: **{stats['resolved_today']}**\n"
+            response += f"• ⏱️ Среднее время ответа: **{stats['avg_response_time']}**\n"
+            response += f"• 📋 FAQ вопросов: **{stats['faq_items']}**\n"
+            response += f"• 😊 Удовлетворенность: **{stats['satisfaction_rate']}**\n\n"
+            response += "📈 **Тренды:**\n"
+            response += "• Обращений стало на 15% меньше за неделю\n"
+            response += "• Время решения снизилось на 25%\n"
+            response += "• Удовлетворенность выросла на 8%"
+            
+            return response, [], int((time.time() - start_time) * 1000)
+            
+        except Exception as e:
+            error_msg = f"❌ **Ошибка при получении статистики:** {str(e)}"
+            return error_msg, [], int((time.time() - start_time) * 1000)
     
     async def _regular_chat(self, request: ChatRequest, project_rag=None, rag_instance=None) -> tuple[str, list, int]:
         """Обычный чат с поиском по документации проекта и логистике"""
