@@ -11,13 +11,28 @@ services:
       - MODEL_NAME=llama3.2:3b
       - DB_PATH=data/metadata.db
       - INDEX_PATH=data/faiss_index
+      - SUPPORT_DB_PATH=data/support.db
+      - SUPPORT_RAG_DB_PATH=data/support_rag.db
+      - FAQ_PATH=data/faq
+      - PRODUCT_DOCS_PATH=docs/product
+      - CRM_PROVIDER=sqlite
+      - RATE_LIMIT=30/minute
+      - MAX_TOKENS=1024
+      - TEMPERATURE=0.4
       - API_KEY=${API_KEY:-}
     volumes:
       - ./data:/app/data
       - ./app/static:/app/app/static
+      - ./docs:/app/docs
     depends_on:
       - ollama
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   ollama:
     image: ollama/ollama:latest
@@ -27,8 +42,13 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     restart: unless-stopped
+    command: serve
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
 volumes:
   ollama_data:
-
-  
