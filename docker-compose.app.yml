@@ -1,17 +1,6 @@
 version: '3.8'
 
 services:
-  ollama:
-    image: ollama/ollama:latest
-    container_name: logistics-ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    restart: unless-stopped
-    networks:
-      - logistics-network
-
   logistics-agent:
     build: .
     container_name: logistics-agent
@@ -19,7 +8,7 @@ services:
       - "8000:8000"
     environment:
       - YANDEX_MAPS_API_KEY=${YANDEX_MAPS_API_KEY:-your_api_key_here}
-      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       - OLLAMA_MODEL=llama3.2:3b
       - CHROMA_DB_PATH=./chroma_db
       - RESOLUTIONS_PATH=./resolutions
@@ -29,26 +18,13 @@ services:
       - ./resolutions:/app/resolutions
       - ./chroma_db:/app/chroma_db
       - ./app/static:/app/app/static
-    depends_on:
-      - ollama
     restart: unless-stopped
-    networks:
-      - logistics-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: >
       sh -c "
-        echo 'Ожидание запуска Ollama...' &&
-        sleep 10 &&
-        echo 'Загрузка модели...' &&
-        curl -X POST http://ollama:11434/api/pull -H 'Content-Type: application/json' -d '{\"name\": \"llama3.2:3b\"}' 2>/dev/null || true &&
         echo 'Запуск индексации документов...' &&
         python -m indexing.indexer &&
         echo 'Запуск сервера...' &&
         uvicorn app.main:app --host 0.0.0.0 --port 8000
       "
-
-volumes:
-  ollama_data:
-
-networks:
-  logistics-network:
-    driver: bridge

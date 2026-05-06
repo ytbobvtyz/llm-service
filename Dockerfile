@@ -1,48 +1,47 @@
-FROM python:3.12-slim
+FROM python:3.11-slim
 
 WORKDIR /app
 
 # Установка системных зависимостей
 RUN apt-get update && apt-get install -y \
-    gcc g++ \
-    git \
-    sqlite3 \
     curl \
+    git \
+    gcc \
+    g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Копирование requirements и установка Python зависимостей
-COPY requirements-docker.txt requirements.txt
+# Копирование зависимостей
+COPY requirements.txt .
+
+# Установка Python зависимостей
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Установка дополнительных зависимостей для поддержки
-RUN pip install --no-cache-dir \
-    slowapi==0.1.9 \
-    httpx==0.27.0 \
-    numpy==1.26.0 \
-    pydantic==2.8.0 \
-    python-multipart==0.0.9
-
 # Копирование исходного кода
-COPY app/ ./app/
-COPY docs/ ./docs/
-COPY data/ ./data/
+COPY . .
 
 # Создание необходимых директорий
-RUN mkdir -p /app/data/faq /app/docs/product /app/app/static
+RUN mkdir -p chroma_db resolutions app/static
 
-# Переменные окружения по умолчанию
-ENV OLLAMA_URL=http://ollama:11434
-ENV MODEL_NAME=llama3.2:3b
-ENV SUPPORT_DB_PATH=data/support.db
-ENV SUPPORT_RAG_DB_PATH=data/support_rag.db
-ENV FAQ_PATH=data/faq
-ENV PRODUCT_DOCS_PATH=docs/product
-ENV CRM_PROVIDER=sqlite
-ENV RATE_LIMIT=20/minute
-ENV MAX_TOKENS=768
-ENV TEMPERATURE=0.4
-ENV PORT=8000
+# Создание тестовых документов, если их нет
+RUN if [ ! -f "resolutions/2026/Тестовый регион_постановление_1.txt" ]; then \
+    mkdir -p resolutions/2026 && \
+    echo "Ограничение нагрузки на ось: 8 тонн" > "resolutions/2026/Тестовый регион_постановление_1.txt" && \
+    echo "Период: 01.04.2026 - 30.05.2026" >> "resolutions/2026/Тестовый регион_постановление_1.txt"; \
+    fi
 
+# Создание .env файла с переменными по умолчанию, если его нет
+RUN if [ ! -f ".env" ]; then \
+    echo "YANDEX_MAPS_API_KEY=your_api_key_here" > .env && \
+    echo "OLLAMA_BASE_URL=http://host.docker.internal:11434" >> .env && \
+    echo "OLLAMA_MODEL=llama3.2:3b" >> .env && \
+    echo "CHROMA_DB_PATH=./chroma_db" >> .env && \
+    echo "RESOLUTIONS_PATH=./resolutions" >> .env && \
+    echo "HOST=0.0.0.0" >> .env && \
+    echo "PORT=8000" >> .env; \
+    fi
+
+# Открытие порта
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Команда запуска
+CMD ["sh", "-c", "python -m indexing.indexer && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"]
