@@ -8,59 +8,50 @@ from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
 
 from app.config import config
-from app.rag import RAGRetriever, ProjectDocsRAG
-from app.ollama_client import OllamaClient
-from app.api import router, setup as setup_api, limiter
-from app.support_api import router as support_router, setup as setup_support_api
-from app.support_rag import support_rag
-from app.crm import crm_manager
+from app.api.routes import router
+from app.api.models import StatusResponse
+from agent.core import initialize_agent
+from indexing.indexer import DocumentIndexer
 
-# Убедимся, что папка для статики существует
-os.makedirs("app/static", exist_ok=True)
-os.makedirs("docs", exist_ok=True)
-os.makedirs("data", exist_ok=True)
-os.makedirs(config.faq_path, exist_ok=True)
-os.makedirs(config.product_docs_path, exist_ok=True)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
     print("=" * 60)
-    print("🚀 Запуск RAG LLM Service с поддержкой пользователей")
-    print(f"   Модель: {config.model_name}")
-    print(f"   RAG индекс: {config.db_path}")
-    print(f"   Support RAG: {config.support_rag_db_path}")
-    print(f"   CRM провайдер: {config.crm_provider}")
+    print("🚀 Запуск логистического агента для анализа ограничений на просушку дорог")
+    print(f"   Модель: {config.ollama_model}")
+    print(f"   Яндекс API ключ: {'установлен' if config.yandex_maps_api_key else 'отсутствует'}")
+    print(f"   ChromaDB путь: {config.chroma_db_path}")
+    print(f"   Документы: {config.resolutions_path}")
     print("=" * 60)
     
-    # Инициализация RAG для логистики
-    app.state.rag = RAGRetriever(config.db_path, config.index_path)
-    
-    # Инициализация RAG для документации проекта
-    app.state.project_rag = ProjectDocsRAG(
-        docs_path=config.project_docs_path,
-        db_path="data/project_docs.db"
+    # Инициализация индексатора документов
+    app.state.indexer = DocumentIndexer(
+        resolutions_path=config.resolutions_path,
+        chroma_db_path=config.chroma_db_path,
+        chunk_size=config.chunk_size,
+        chunk_overlap=config.chunk_overlap
     )
     
-    # Инициализация Ollama клиента
-    app.state.ollama_client = OllamaClient()
-    
-    # Support RAG уже инициализирован как глобальная переменная
-    # CRM Manager уже инициализирован как глобальная переменная
-    
-    # Настройка API
-    setup_api(app.state.rag, app.state.project_rag, app.state.ollama_client)
-    setup_support_api(app.state.ollama_client)
+    # Инициализация агента
+    app.state.agent = initialize_agent()
     
     yield
     
     # Shutdown
-    await app.state.ollama_client.client.aclose()
+    print("Завершение работы логистического агента...")
 
 
-app = FastAPI(title="RAG LLM Service с поддержкой пользователей", version="4.0.0", lifespan=lifespan)
+app = FastAPI(
+    title="Логистический агент для анализа ограничений на просушку дорог",
+    version="1.0.0",
+    lifespan=lifespan
+)
 
 # Rate limiting
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -84,11 +75,47 @@ async def root():
     if os.path.exists(index_path):
         with open(index_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
-    return HTMLResponse(content="<h1>Index.html not found</h1>", status_code=404)
+    return HTMLResponse(content="<h1>Логистический агент для анализа ограничений на просушку дорог</h1>", status_code=404)
+
+# Статус системы
+@app.get("/api/status", response_model=StatusResponse)
+async def get_status():
+    from app.api.models import ComponentStatus, StatusResponse
+    import httpx
+    
+    # Проверка Ollama
+    ollama_status = "unknown"
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(f"{config.ollama_base_url}/api/tags", timeout=5)
+            ollama_status = "healthy" if response.status_code == 200 else "unhealthy"
+    except Exception:
+        ollama_status = "unhealthy"
+    
+    # Проверка Яндекс API
+    yandex_status = "unknown"
+    if config.yandex_maps_api_key:
+        yandex_status = "configured"
+    else:
+        yandex_status = "not_configured"
+    
+    # Проверка ChromaDB
+    chroma_status = "unknown"
+    if os.path.exists(config.chroma_db_path):
+        chroma_status = "exists"
+    
+    return StatusResponse(
+        status="operational",
+        components={
+            "ollama": ComponentStatus(status=ollama_status, message="Локальная LLM модель"),
+            "yandex_api": ComponentStatus(status=yandex_status, message="API Яндекс Карт"),
+            "chromadb": ComponentStatus(status=chroma_status, message="Векторная база данных"),
+            "documents": ComponentStatus(status="exists" if os.path.exists(config.resolutions_path) else "missing", message="Документы с ограничениями")
+        }
+    )
 
 # Include API routers
 app.include_router(router)
-app.include_router(support_router)
 
 if __name__ == "__main__":
     import uvicorn

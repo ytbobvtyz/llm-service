@@ -1,34 +1,35 @@
 import os
-from dataclasses import dataclass
+from pydantic_settings import BaseSettings
+from typing import Optional
 
-@dataclass
-class Config:
-    # Ollama
-    ollama_url: str = os.getenv("OLLAMA_URL", "http://ollama:11434")
-    model_name: str = os.getenv("MODEL_NAME", "llama3.2:3b")
+
+class Config(BaseSettings):
+    # API ключи
+    yandex_maps_api_key: str
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "llama3.2:3b"
     
-    # RAG
-    db_path: str = os.getenv("DB_PATH", "data/metadata.db")
-    index_path: str = os.getenv("INDEX_PATH", "data/faiss_index")
-    project_docs_path: str = os.getenv("PROJECT_DOCS_PATH", "docs")
+    # Пути
+    chroma_db_path: str = "./chroma_db"
+    resolutions_path: str = "./resolutions"
     
-    # Support
-    support_db_path: str = os.getenv("SUPPORT_DB_PATH", "data/support.db")
-    support_rag_db_path: str = os.getenv("SUPPORT_RAG_DB_PATH", "data/support_rag.db")
-    faq_path: str = os.getenv("FAQ_PATH", "data/faq")
-    product_docs_path: str = os.getenv("PRODUCT_DOCS_PATH", "docs/product")
-    crm_provider: str = os.getenv("CRM_PROVIDER", "sqlite")
-    
-    # API
-    rate_limit: str = os.getenv("RATE_LIMIT", "20/minute")
-    max_tokens: int = int(os.getenv("MAX_TOKENS", "768"))
-    temperature: float = float(os.getenv("TEMPERATURE", "0.4"))
-    
-    # Server
+    # Настройки сервера
     host: str = "0.0.0.0"
-    port: int = int(os.getenv("PORT", "8000"))
+    port: int = 8000
     
-    # Context
-    context_length: int = int(os.getenv("CONTEXT_LENGTH", "4096"))
+    # Настройки индексации
+    chunk_size: int = 1000
+    chunk_overlap: int = 100
+    
+    # Настройки маршрутизации
+    default_vehicle_type: str = "truck"
+    default_axle_weight: float = 10.0  # тонн
+    default_period_days: int = 10
+    
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
 
+
+# Создаем глобальный экземпляр конфигурации
 config = Config()

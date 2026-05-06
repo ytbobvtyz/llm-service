@@ -7,3 +7,15 @@ pydantic==2.8.0
 python-multipart==0.0.9
 sentence-transformers==2.7.0
 faiss-cpu==1.8.0
+# Новые зависимости для логистического агента
+langchain==0.3.0
+langchain-community==0.3.0
+chromadb==0.5.0
+pymupdf==1.24.4
+python-docx==1.1.2
+chardet==5.2.0
+ollama==0.4.2
+# Для работы с геоданными
+geopy==2.4.1
+# Для работы с API Яндекса
+requests==2.32.3
