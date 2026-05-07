@@ -3,74 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RAG LLM Service с поддержкой пользователей</title>
+    <title>Логистический помощник - анализ ограничений на просушку дорог</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 <div class="container">
-    <h1>📚 RAG LLM Service с поддержкой пользователей</h1>
-
-    <div class="status-bar">
-        <div class="status-item"><div class="status-dot"></div><span id="statusText">Подключение...</span></div>
-        <div class="status-item">🦙 Модель: <strong>llama3.2:3b</strong></div>
-        <div class="status-item">📄 RAG: <strong id="ragStatus">загрузка...</strong></div>
-        <div class="status-item">👥 Поддержка: <strong id="supportStatus">загрузка...</strong></div>
-    </div>
-
-    <div class="chat-container">
-        <div class="chat-messages" id="chatMessages">
-            <div class="message assistant">
-                <div class="message-content">
-                    👋 Здравствуйте! Я AI-ассистент разработчика и поддержки пользователей.<br><br>
-                    
-                    <strong>📋 Команды разработчика:</strong><br>
-                    <code>/help</code> - список команд<br>
-                    <code>/branch</code> - текущая ветка Git<br>
-                    <code>/files</code> - файлы в проекте<br>
-                    <code>/structure</code> - структура проекта<br>
-                    <code>/readme</code> - документация проекта<br><br>
-                    
-                    <strong>👥 Команды поддержки пользователей:</strong><br>
-                    <code>/support</code> - чат с поддержкой<br>
-                    <code>/faq</code> - просмотр FAQ<br>
-                    <code>/users</code> - управление пользователями<br>
-                    <code>/tickets</code> - управление тикетами<br>
-                    <code>/stats</code> - статистика поддержки<br><br>
-                    
-                    <strong>💬 Примеры вопросов для поддержки:</strong><br>
-                    • "Почему не работает авторизация?"<br>
-                    • "Как обновить тарифный план?"<br>
-                    • "Какие системные требования?"<br>
-                    • "Как восстановить доступ к аккаунту?"
+    <div class="main-layout">
+        <!-- Левая панель отладки -->
+        <div class="debug-panel">
+            <h2>🔧 Отладка</h2>
+            
+            <div class="debug-section">
+                <h3>Статус компонентов</h3>
+                <div class="status-item">
+                    <span class="status-dot" id="ollamaDot"></span>
+                    <span>Ollama</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-dot" id="yandexDot"></span>
+                    <span>Яндекс API</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-dot" id="chromaDot"></span>
+                    <span>ChromaDB</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-dot" id="docsDot"></span>
+                    <span>Документы</span>
+                </div>
+            </div>
+            
+            <div class="debug-section">
+                <h3>Лог событий</h3>
+                <div class="debug-log" id="debugLog">
+                    <div class="log-entry">Система инициализирована</div>
                 </div>
             </div>
         </div>
+        
+        <!-- Центральная панель чата -->
+        <div class="chat-panel">
+            <h1>🚛 Логистический помощник</h1>
+            <p class="subtitle">Анализ ограничений на просушку дорог в период паводков</p>
 
-        <div class="input-area">
-            <input type="text" id="messageInput" placeholder="Задайте вопрос или введите команду..." autofocus>
-            <button id="sendBtn" onclick="sendMessage()">Отправить</button>
+            <div class="status-bar">
+                <div class="status-item">
+                    <span class="status-dot" id="mainStatusDot"></span>
+                    <span id="statusText">Подключение...</span>
+                </div>
+                <div class="status-item">🦙 Модель: <strong>llama3.2:3b</strong></div>
+                <div class="status-item">📄 Документы: <strong id="docCount">-</strong></div>
+            </div>
+
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message assistant">
+                        <div class="message-content">
+                            👋 Здравствуйте! Я логистический помощник для анализа ограничений на просушку дорог.<br><br>
+                            
+                            Я помогу вам спланировать рейс по РФ в период паводков. Просто укажите маршрут, и я:<br>
+                            • Построю оптимальные маршруты через Яндекс API<br>
+                            • Определю регионы следования<br>
+                            • Найду ограничения на просушку дорог в базе документов<br>
+                            • Предложу альтернативные маршруты при необходимости<br><br>
+                            
+                            <strong>💬 Примеры запросов:</strong><br>
+                            • "Пермь-Москва паводки"<br>
+                            • "Казань-Екатеринбург весенние ограничения"<br>
+                            • "Построй маршрут Екатеринбург-Москва для грузовика 8 тонн"
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-area">
+                    <input type="text" id="messageInput" placeholder="Введите маршрут (например: Пермь-Москва паводки)..." autofocus>
+                    <button id="sendBtn" onclick="sendMessage()">Отправить</button>
+                </div>
+            </div>
+            
+            <div class="quick-questions">
+                <strong>Быстрые запросы:</strong>
+                <button class="quick-btn" onclick="setQuestion('Пермь-Москва паводки')">Пермь-Москва</button>
+                <button class="quick-btn" onclick="setQuestion('Казань-Екатеринбург весенние ограничения')">Казань-Екатеринбург</button>
+                <button class="quick-btn" onclick="setQuestion('Екатеринбург-Москва грузовик 8 тонн')">Екатеринбург-Москва</button>
+                <button class="quick-btn" onclick="setQuestion('Помоги с маршрутом')">Помоги с маршрутом</button>
+            </div>
         </div>
-    </div>
-
-    <div class="metrics" id="metrics">💡 Напишите вопрос или команду для начала работы</div>
-    
-    <div class="commands">
-        💡 <strong>Быстрые команды:</strong> 
-        <code>/help</code> <code>/branch</code> <code>/files</code> <code>/structure</code> <code>/readme</code>
-        <code>/support</code> <code>/faq</code> <code>/users</code> <code>/tickets</code> <code>/stats</code>
-    </div>
-    
-    <div class="quick-questions">
-        💬 <strong>Примеры вопросов для тестирования:</strong>
-        <button class="quick-btn" onclick="setQuestion('Почему не работает авторизация?')">Авторизация</button>
-        <button class="quick-btn" onclick="setQuestion('Как обновить тарифный план?')">Тарифный план</button>
-        <button class="quick-btn" onclick="setQuestion('Какие системные требования для приложения?')">Системные требования</button>
-        <button class="quick-btn" onclick="setQuestion('Как восстановить доступ к аккаунту?')">Восстановление доступа</button>
-        <button class="quick-btn" onclick="setQuestion('Как очистить кэш приложения?')">Очистка кэша</button>
     </div>
     
     <div class="footer">
-        🔒 Приватный сервис | Ассистент разработчика и поддержки | RAG + MCP Git + Support CRM | Все данные на вашем сервере
+        🔒 Логистический агент | Все данные хранятся локально | RAG + ChromaDB
     </div>
 </div>
 <script src="/static/script.js"></script>

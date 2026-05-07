@@ -9,4 +9,4 @@ data/*.index
 .DS_Store
 .kilo
 .taskstate.md
-
+chroma_db/

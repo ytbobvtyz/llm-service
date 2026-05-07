@@ -6,8 +6,60 @@ body {
     margin: 0;
     padding: 20px;
 }
-.container { max-width: 1000px; margin: 0 auto; }
-h1 { color: #58a6ff; display: flex; align-items: center; gap: 10px; }
+.container { max-width: 1400px; margin: 0 auto; }
+h1 { color: #58a6ff; display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+.subtitle { color: #8b949e; margin-top: 0; margin-bottom: 20px; font-size: 14px; }
+
+/* Главный макет */
+.main-layout {
+    display: flex;
+    gap: 20px;
+}
+
+/* Левая панель отладки */
+.debug-panel {
+    width: 300px;
+    flex-shrink: 0;
+    background: #161b22;
+    border-radius: 12px;
+    border: 1px solid #30363d;
+    padding: 15px;
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+}
+.debug-panel h2 { margin-top: 0; font-size: 18px; color: #f0883e; }
+.debug-panel h3 { font-size: 14px; color: #8b949e; margin: 15px 0 10px; }
+
+.debug-section {
+    margin-bottom: 15px;
+}
+
+.debug-log {
+    background: #0d1117;
+    border-radius: 8px;
+    padding: 10px;
+    height: 300px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 11px;
+}
+
+.log-entry {
+    padding: 4px 0;
+    border-bottom: 1px solid #21262d;
+}
+.log-entry.error { color: #f85149; }
+.log-entry.success { color: #3fb950; }
+.log-entry.info { color: #58a6ff; }
+
+/* Правая панель чата */
+.chat-panel {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Статус бар */
 .status-bar {
     background: #161b22;
     border-radius: 12px;
@@ -27,7 +79,11 @@ h1 { color: #58a6ff; display: flex; align-items: center; gap: 10px; }
     background-color: #3fb950;
     animation: pulse 2s infinite;
 }
+.status-dot.error { background-color: #f85149; }
+.status-dot.warning { background-color: #d29922; }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+/* Чат */
 .chat-container {
     background: #161b22;
     border-radius: 16px;
@@ -60,18 +116,28 @@ h1 { color: #58a6ff; display: flex; align-items: center; gap: 10px; }
     background: #21262d;
     border-bottom-left-radius: 4px;
 }
-.sources {
-    font-size: 11px;
+
+/* JSON блок */
+.json-block {
+    margin-top: 10px;
+    background: #0d1117;
+    border-radius: 8px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 12px;
+    overflow-x: auto;
+}
+.json-block summary {
+    cursor: pointer;
     color: #a371f7;
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid #30363d;
+    font-size: 12px;
 }
-.message-meta {
-    font-size: 11px;
+.json-block pre {
+    margin: 10px 0 0;
     color: #8b949e;
-    margin-top: 5px;
 }
+
+/* Область ввода */
 .input-area {
     display: flex;
     gap: 12px;
@@ -101,73 +167,8 @@ h1 { color: #58a6ff; display: flex; align-items: center; gap: 10px; }
 }
 .input-area button:hover:not(:disabled) { opacity: 0.9; transform: scale(1.02); }
 .input-area button:disabled { opacity: 0.5; cursor: not-allowed; }
-.metrics {
-    font-family: monospace;
-    font-size: 12px;
-    color: #8b949e;
-    text-align: center;
-    padding: 10px;
-    margin-top: 10px;
-}
-.loading-spinner {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid #30363d;
-    border-top-color: #58a6ff;
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-    vertical-align: middle;
-    margin-right: 8px;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.footer {
-    text-align: center;
-    font-size: 12px;
-    color: #8b949e;
-    margin-top: 20px;
-}
-.rag-badge {
-    display: inline-block;
-    background: #2d1b4e;
-    color: #a371f7;
-    padding: 2px 8px;
-    border-radius: 20px;
-    font-size: 10px;
-    margin-left: 8px;
-}
-.support-badge {
-    display: inline-block;
-    background: #1b4e2d;
-    color: #3fb950;
-    padding: 2px 8px;
-    border-radius: 20px;
-    font-size: 10px;
-    margin-left: 8px;
-}
-.commands {
-    background: rgba(32, 109, 235, 0.1);
-    border: 1px solid rgba(32, 109, 235, 0.2);
-    border-radius: 12px;
-    padding: 12px 20px;
-    margin-top: 10px;
-    font-size: 13px;
-    color: #58a6ff;
-    text-align: center;
-}
-.commands code {
-    background: rgba(32, 109, 235, 0.15);
-    padding: 3px 8px;
-    border-radius: 6px;
-    margin: 0 4px;
-    font-family: monospace;
-    border: 1px solid rgba(32, 109, 235, 0.3);
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-.commands code:hover {
-    background: rgba(32, 109, 235, 0.25);
-}
+
+/* Быстрые вопросы */
 .quick-questions {
     background: rgba(63, 185, 80, 0.1);
     border: 1px solid rgba(63, 185, 80, 0.2);
@@ -192,4 +193,19 @@ h1 { color: #58a6ff; display: flex; align-items: center; gap: 10px; }
 }
 .quick-btn:hover {
     background: rgba(63, 185, 80, 0.25);
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    font-size: 12px;
+    color: #8b949e;
+    margin-top: 20px;
+}
+
+/* Адаптивность */
+@media (max-width: 900px) {
+    .main-layout { flex-direction: column; }
+    .debug-panel { width: 100%; position: static; }
+    .debug-log { height: 200px; }
 }

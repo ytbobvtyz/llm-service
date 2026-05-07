@@ -1,6 +1,6 @@
 import logging
 import asyncio
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 import httpx
 from math import radians, sin, cos, sqrt, atan2
 
@@ -103,13 +103,13 @@ class YandexRouter:
                 waypoints_str = "|".join([f"{lon},{lat}" for lat, lon in waypoint_coords])
                 params["waypoints"] = waypoints_str
             
-            # Добавление параметров грузовика
+            # Добавление параметров грузовика (только если значение не None и не пустое)
             if vehicle_type == "truck":
-                if "truck_axle_weight" in truck_params:
+                if truck_params.get("truck_axle_weight") is not None:
                     params["truck_axle_weight"] = truck_params["truck_axle_weight"]
-                if "truck_weight" in truck_params:
+                if truck_params.get("truck_weight") is not None:
                     params["truck_weight"] = truck_params["truck_weight"]
-                if "truck_height" in truck_params:
+                if truck_params.get("truck_height") is not None:
                     params["truck_height"] = truck_params["truck_height"]
             
             # Выполнение запроса
