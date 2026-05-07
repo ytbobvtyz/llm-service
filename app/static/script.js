@@ -56,7 +56,8 @@ function addLogEntry(message, type = 'info') {
     if (log) {
         const entry = document.createElement('div');
         entry.className = `log-entry ${type}`;
-        entry.textContent = message;
+        const time = new Date().toLocaleTimeString();
+        entry.textContent = `[${time}] ${message}`;
         log.appendChild(entry);
         log.scrollTop = log.scrollHeight;
     }
@@ -128,6 +129,12 @@ async function sendMessage() {
         if (data.debug_info) {
             const steps = data.debug_info.step || 'unknown';
             addLogEntry('Этап: ' + steps, 'info');
+            
+            // Логируем параметры
+            if (data.debug_info.params) {
+                const params = data.debug_info.params;
+                addLogEntry('Маршрут: ' + params.origin + ' -> ' + params.destination, 'info');
+            }
         }
         
         messages.push({

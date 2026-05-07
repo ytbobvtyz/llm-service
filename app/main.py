@@ -68,6 +68,12 @@ app.add_middleware(
 if os.path.exists("app/static"):
     app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
+# Редирект для совместимости
+@app.get("/health")
+async def health_redirect():
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/api/status")
+
 # Корневой маршрут для веб-интерфейса
 @app.get("/", response_class=HTMLResponse)
 async def root():
