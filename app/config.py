@@ -26,6 +26,8 @@ class Config(BaseSettings):
     default_axle_weight: float = 10.0  # тонн
     default_period_days: int = 10
     
+    rate_limit: int = 100
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

@@ -8,7 +8,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
 
 from app.config import config
-from app.api.routes import router
+from app.api import router
 from app.api.models import StatusResponse
 from agent.core import initialize_agent
 from indexing.indexer import DocumentIndexer

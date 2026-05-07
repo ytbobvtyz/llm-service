@@ -2,16 +2,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Установка системных зависимостей
+# Установка минимальных системных зависимостей
 RUN apt-get update && apt-get install -y \
     curl \
     gcc \
     g++ \
-    # Зависимости для PyMuPDF (fitz)
-    mupdf \
-    mupdf-tools \
-    libmupdf-dev \
-    # Графические зависимости для обработки PDF
+    # Минимальные зависимости для PyMuPDF
     libgl1 \
     libglib2.0-0 \
     libsm6 \

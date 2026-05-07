@@ -81,15 +81,70 @@ class DocumentIndexer:
         }
     
     def extract_text_from_pdf(self, filepath: Path) -> str:
-        """Извлечение текста из PDF файла."""
+        """Извлечение текста из PDF файла с улучшенной обработкой ошибок."""
         text = ""
         try:
-            doc = fitz.open(filepath)
-            for page in doc:
-                text += page.get_text()
+            # Проверка существования файла
+            if not filepath.exists():
+                logger.error(f"PDF файл не существует: {filepath}")
+                return ""
+            
+            # Проверка размера файла
+            file_size = filepath.stat().st_size
+            if file_size == 0:
+                logger.error(f"PDF файл пустой: {filepath}")
+                return ""
+            
+            logger.debug(f"Открытие PDF файла: {filepath} (размер: {file_size} байт)")
+            
+            # Открытие PDF с обработкой различных ошибок
+            try:
+                doc = fitz.open(filepath)
+            except Exception as e:
+                logger.error(f"Не удалось открыть PDF файл {filepath}: {e}")
+                return ""
+            
+            # Проверка количества страниц
+            page_count = doc.page_count
+            logger.debug(f"PDF содержит {page_count} страниц")
+            
+            if page_count == 0:
+                logger.warning(f"PDF файл не содержит страниц: {filepath}")
+                doc.close()
+                return ""
+            
+            # Извлечение текста со всех страниц
+            for page_num in range(page_count):
+                try:
+                    page = doc.load_page(page_num)
+                    page_text = page.get_text()
+                    if page_text:
+                        text += page_text + "\n"
+                    else:
+                        logger.debug(f"Страница {page_num + 1} не содержит текста")
+                except Exception as e:
+                    logger.warning(f"Ошибка при чтении страницы {page_num + 1}: {e}")
+            
             doc.close()
+            
+            if not text.strip():
+                logger.warning(f"PDF файл не содержит извлекаемого текста: {filepath}")
+                # Попробуем альтернативный метод извлечения текста
+                try:
+                    doc = fitz.open(filepath)
+                    text = ""
+                    for page_num in range(doc.page_count):
+                        page = doc.load_page(page_num)
+                        text += page.get_text("text") + "\n"
+                    doc.close()
+                except Exception as e:
+                    logger.error(f"Альтернативный метод также не сработал: {e}")
+            
+            logger.debug(f"Извлечено {len(text)} символов из PDF: {filepath}")
+            
         except Exception as e:
-            logger.error(f"Ошибка при чтении PDF {filepath}: {e}")
+            logger.error(f"Критическая ошибка при обработке PDF {filepath}: {e}")
+        
         return text
     
     def extract_text_from_docx(self, filepath: Path) -> str:
